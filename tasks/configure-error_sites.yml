@@ -1,0 +1,19 @@
+---
+  - name: create apache error site folder
+    file:
+      path: "{{ apache_error_site_folder }}"
+      state: directory
+      group: "{{ apache_group }}"
+      owner: "{{ apache_user }}"
+      mode: 0775
+    when: apache_error_site_manage
+
+  - name: Copy file with owner and permissions
+    copy:
+      src: "error_sites/{{ item.filename }}"
+      dest: "{{ apache_error_site_root_folder }}/{{ apache_error_site_folder }}/"
+      group: "{{ apache_group }}"
+      owner: "{{ apache_user }}"
+      mode: 0775
+    with_items: "{{ apache_error_sites }}"
+    when: apache_error_site_manage

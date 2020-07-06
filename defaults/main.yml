@@ -40,3 +40,9 @@ apache_status_ips: []
 apache_status_enable: false
 apache_status_template: server-status.conf.j2
 apache_status_filename: server-status.conf
+
+# Apache Error Sites
+apache_error_site_manage: false 
+apache_error_site_root_folder: /var/www/html
+apache_error_site_folder: error
+apache_error_sites: []

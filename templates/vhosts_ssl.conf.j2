@@ -85,5 +85,11 @@
     {% endfor %}
     RewriteRule {{ vhost.rewrite.rule }}
 {% endif %}
+{% if apache_error_site_manage %}
+    # ErrorDocument 
+{% for errordocument in apache_error_sites %}
+    ErrorDocument {{ errordocument.error_level }} /{{ apache_error_site_folder }}/{{ errordocument.filename }}
+    {% endfor %}
+{% endif %}
 {% endfor %}
 </VirtualHost>
