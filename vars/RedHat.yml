@@ -1,0 +1,28 @@
+---
+apache_service: httpd
+apache_daemon: httpd
+apache_daemon_path: /usr/sbin/
+apache_server_root: /etc/httpd
+apache_confd_path: /etc/httpd/conf.d
+apache_conf_path: /etc/httpd/conf
+apache_ssl_folder: /etc/httpd/ssl
+apache_log_folder: /var/log/httpd
+apache_documentroot: /var/www/html
+apache_conf_file: "httpd.conf"
+apache_user: apache
+apache_group: apache
+
+apache_types_config_file: /etc/mime.types
+
+apache_packages:
+  - httpd
+  - httpd-devel
+  - mod_ssl
+  - openssh
+
+
+apache_removeable_vhosts:
+  - userdir.conf
+  - autoindex.conf
+  - welcome.conf
+  - ssl.conf

@@ -1,0 +1,27 @@
+# {{ansible_managed}}
+
+{# Set up VirtualHosts #}
+
+<VirtualHost {{ ansible_eth0.ipv4.address }}:{{ apache_forward_proxy_listen_port }}>
+
+#Logging
+ErrorLog "{{ apache_log_folder }}/prx_forward_error.log"
+ServerSignature off
+CustomLog "{{ apache_log_folder }}/prx_forward_access.log" "forward_proxy"
+
+## Custom fragment
+AllowCONNECT {{ apache_forward_proxy_allowed_ports|join(' ') }}
+ProxyRequests On
+ProxyVia Off
+
+<Proxy *>
+  Require all denied
+  {% for require in apache_forward_proxy_allowed_destinations %}
+Require expr %{HTTP_HOST} = '{{ require }}'
+  {% endfor %}
+</Proxy>
+
+  LogFormat "%{Host}i %a %D %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" [uniqueID %L]" forward_proxy
+  ErrorLogFormat "[%{u}t] [%-m:%l] [pid %P:tid %T] %7F: %E: [client\ %a] %M% ,\ referer\ %{Referer}i [%L]"
+
+</VirtualHost>

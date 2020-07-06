@@ -1,0 +1,29 @@
+# {{ansible_managed}}
+
+{# Set up VirtualHosts #}
+{% for vhost in apache_vhosts %}
+<VirtualHost {{ vhost.listen_address| default(apache_default_listen_address) }}:{{ apache_listen_port }}>
+  ServerName {{ vhost.servername }}
+{% if vhost.serveraliases is defined %}
+  ServerAlias {{ vhost.serveraliases |join(' ') }}
+{% endif %}
+  DocumentRoot "{{ vhost.documentroot | default (apache_documentroot)}}"
+
+  <Directory "{{ vhost.documentroot | default (apache_documentroot)}}">
+    AllowOverride {{ vhost.allow_override | default(apache_allow_override) }}
+    Options {{ vhost.options |join(' ')| default(apache_options) }}
+    Require all granted
+  </Directory>
+
+{% if vhost.extra_parameters is defined %}
+  {{ vhost.extra_parameters }}
+{% endif %}
+    #Logging
+    ErrorLog "{{ apache_log_folder }}/error_{{ vhost.name }}.log"
+    ServerSignature off
+    CustomLog "{{ apache_log_folder }}/access_{{ vhost.name }}.log" combined
+    LogFormat "\"%{X-Forwarded-For}i\" %a %D %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" [uniqueID %L]" x-forwarded-for
+    ErrorLogFormat "[%{u}t] [%-m:%l] [pid %P:tid %T] %7F: %E: [client\ %a] %M% ,\ referer\ %{Referer}i [%L]"
+
+{% endfor %}
+</VirtualHost>

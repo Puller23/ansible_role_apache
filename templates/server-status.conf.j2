@@ -1,0 +1,12 @@
+# {{ansible_managed}}
+
+<Location "/server-status">
+    SetHandler server-status
+    Order deny,allow
+    Deny from all
+{% if apache_status_ips |length > 0 %}
+{% for apache_status_ip in apache_status_ips %}
+    Allow from {{ apache_status_ip }}
+{% endfor %}
+{% endif %}
+</Location>

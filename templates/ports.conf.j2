@@ -1,0 +1,14 @@
+# {{ansible_managed}}
+
+{% if apache_forward_proxy_allowed_destinations |length > 0 %}
+Listen {{ apache_default_listen_address }}:{{ apache_forward_proxy_listen_port }}
+{% endif %}
+{% if apache_vhosts_ssl |length > 0 %}
+Listen {{ apache_default_listen_address }}:{{ apache_listen_port_ssl }}
+{% endif %}
+{% if apache_vhosts |length > 0 %}
+Listen {{ apache_default_listen_address }}:{{ apache_listen_port }}
+{% endif %}
+{% if apache_status_enable|bool %}
+Listen {{ apache_default_listen_address }}:{{ apache_listen_port }}
+{% endif %}

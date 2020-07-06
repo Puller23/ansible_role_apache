@@ -1,0 +1,48 @@
+# {{ansible_managed}}
+
+# Security
+ServerTokens Prod
+ServerSignature Off
+TraceEnable Off
+
+ServerName "{{ansible_hostname}}"
+ServerRoot "{{ apache_server_root }}"
+PidFile run/httpd.pid
+Timeout 120
+KeepAlive Off
+MaxKeepAliveRequests 100
+KeepAliveTimeout 5
+LimitRequestFieldSize 8190
+
+User {{ apache_user }}
+Group {{ apache_group }}
+
+AccessFileName .htaccess
+<FilesMatch "^\.ht">
+    Require all denied
+</FilesMatch>
+
+<Directory />
+  Options SymLinksIfOwnerMatch
+  AllowOverride None
+</Directory>
+
+
+HostnameLookups Off
+ErrorLog "/var/log/httpd/error_log"
+LogLevel warn
+EnableSendfile On
+
+TypesConfig {{ apache_types_config_file }}
+
+#Include "/etc/httpd/conf.modules.d/*.load"
+Include "/etc/httpd/conf.modules.d/*.conf"
+Include "/etc/httpd/conf/ports.conf"
+
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%h %l %u %t \"%r\" %>s %b" common
+LogFormat "%{Referer}i -> %U" referer
+LogFormat "%{User-agent}i" agent
+LogFormat "%{X-Forwarded-For}i %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"" forwarded
+
+IncludeOptional "/etc/httpd/conf.d/*.conf"

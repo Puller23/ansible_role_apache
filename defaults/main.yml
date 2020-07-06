@@ -1,0 +1,42 @@
+---
+
+apache_state: started
+apache_restart_state: restarted
+
+apache_listen_port: 80
+
+apache_remove_default_vhost: true
+apache_default_listen_address: "{{ ansible_eth0.ipv4.address }}"
+
+apache_vhosts_filename: "vhosts.conf"
+apache_vhosts_template: "vhosts.conf.j2"
+apache_packages_state: present
+
+apache_additional_modules: []
+
+apache_vhosts: []
+
+apache_allow_override: "None"
+apache_options: "-Indexes -FollowSymLinks +SymLinksIfOwnerMatch +IncludesNoExec"
+
+# SSL
+apache_ssl_vhosts_template: "vhosts_ssl.conf.j2"
+apache_listen_port_ssl: 443
+apache_tls_certificates: []
+apache_vhosts_ssl: []
+apache_ssl_cipher_suite: "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA"
+apache_ssl_proxy_cipher_suite: "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA"
+
+# ForwardProxy
+apache_vhosts_forwardproxy: []
+apache_forward_proxy_listen_port: 8080
+apache_forward_proxy_allowed_ports: []
+apache_forward_proxy_allowed_destinations: []
+apache_forward_proxy_filename: "forward_proxy.conf"
+apache_forward_proxy_template: "forwardproxy.conf.j2"
+
+# Apache Status
+apache_status_ips: []
+apache_status_enable: false
+apache_status_template: server-status.conf.j2
+apache_status_filename: server-status.conf

@@ -1,0 +1,89 @@
+# {{ansible_managed}}
+
+{# Set up VirtualHosts #}
+{% for vhost in apache_vhosts_ssl %}
+<VirtualHost {{ vhost.listen_address }}:{{ apache_listen_port_ssl }}>
+  ServerName {{ vhost.servername }}
+{% if vhost.serveraliases is defined %}
+  ServerAlias {{ vhost.serveraliases |join(' ') }}
+{% endif %}
+  DocumentRoot "{{ vhost.documentroot | default (apache_documentroot)}}"
+
+  <Directory "{{ vhost.documentroot | default (apache_documentroot)}}">
+    AllowOverride {{ vhost.allow_override | default(apache_allow_override) }}
+    Options {{ vhost.options | default(apache_options) }}
+    Require all granted
+
+    <IfModule mod_dav.c>
+      Dav off
+    </IfModule>
+
+  </Directory>
+
+{% if vhost.extra_parameters is defined %}
+  {{ vhost.extra_parameters }}
+{% endif %}
+    #Logging
+    ErrorLog "{{ apache_log_folder }}/error_{{ vhost.name }}.log"
+    ServerSignature off
+    CustomLog "{{ apache_log_folder }}/access_{{ vhost.name }}.log" "x-forwarded-for" env=!nolbhealthcheck
+    LogFormat "\"%{X-Forwarded-For}i\" %a %D %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" [uniqueID %L]" x-forwarded-for
+    ErrorLogFormat "[%{u}t] [%-m:%l] [pid %P:tid %T] %7F: %E: [client\ %a] %M% ,\ referer\ %{Referer}i [%L]"
+
+{% if vhost.ssl_proxyengine is defined and vhost.ssl_proxyengine == true %}
+    # Proxy rules
+    ProxyRequests Off
+    ProxyPreserveHost On
+    ProxyPass {{ vhost.proxy_pass.path }} {{ vhost.proxy_pass.url }} keepalive={{ vhost.proxy_pass.params.keepalive }} retry={{ vhost.proxy_pass.params.retry }} timeout={{ vhost.proxy_pass.params.timeout }}
+    ProxyPassReverse {{ vhost.proxy_pass.path }} {{ vhost.proxy_pass.url }}
+{% endif %}
+    # SSL
+    SSLEngine on
+    SSLCertificateFile      "{{ vhost.sslcertificatefile }}"
+    SSLCertificateKeyFile   "{{ vhost.sslcertificatekeyfile }}"
+    SSLCertificateChainFile "{{ vhost.sslcertificatechainfile }}"
+    SSLCACertificatePath    "/etc/pki/tls/certs"
+    SSLProtocol             -all +TLSv1.2
+    SSLCipherSuite          {{ apache_ssl_cipher_suite }}
+
+    # SSL Proxy directives
+{% if vhost.ssl_proxyengine is defined and vhost.ssl_proxyengine == true %}
+    SSLProxyEngine On
+
+    SSLProxyCheckPeerCN     "{{ vhost.ssl_proxy_check_peer_cn }}"
+    SSLProxyCheckPeerName   "{{ vhost.ssl_proxy_check_peer_name }}"
+    SSLProxyCheckPeerExpire   "{{ vhost.ssl_proxy_check_peer_expire }}"
+    SSLProxyProtocol  TLSv1.2
+
+    SSLProxyCACertificateFile "{{ vhost.ssl_proxy_ca_cert }}"
+    SSLProxyCipherSuite {{ apache_ssl_proxy_cipher_suite }}
+    SSLSessionCacheTimeout {{ vhost.ssl_session_cache_timeout }}
+
+{% if vhost.ssl_client_cn is defined %}
+    <Location />
+{% if vhost.ssl_client_cn %}
+        SSLRequire (%{SSL_CLIENT_S_DN_CN} in {"{{ vhost.ssl_client_cn |join(' ') }}"}){% endif %}
+{% if vhost.require_ip %}
+        Require ip {{ vhost.require_ip |join(' ') }}{% endif %}
+
+    </Location>
+{% endif %}
+{% if vhost.allowmethods is defined %}
+    <IfModule mod_allowmethods.c>
+    <Location />
+        AllowMethods {{ vhost.allowmethods |join(' ') }}
+    </Location>
+    </IfModule>
+{% endif %}
+
+{% endif %}
+{% if vhost.rewrite is defined %}
+    # Rewrite Rules
+    RewriteEngine On
+    {% for cond in vhost.rewrite.condition %}
+    RewriteCond {{ cond }}
+    {% endfor %}
+    RewriteRule {{ vhost.rewrite.rule }}
+{% endif %}
+{% endfor %}
+</VirtualHost>

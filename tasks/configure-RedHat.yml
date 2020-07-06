@@ -1,0 +1,110 @@
+---
+- name: create ssl directory
+  file:
+    path: "{{ apache_ssl_folder }}"
+    state: directory
+  #when: apache_vhosts_ssl |length > 0
+  when: apache_tls_certificates |length > 0
+
+- name: Create tls cert files
+  no_log: true
+  copy:
+    dest: "{{ apache_ssl_folder }}/{{ item.filename }}"
+    content: |
+      {{ item.cert }}
+      {{ item.key }}
+  with_items: "{{ apache_tls_certificates }} "
+  when: apache_tls_certificates |length > 0
+
+- name: Create tls ca cert files
+  no_log: true
+  copy:
+    dest: "{{ apache_ssl_folder }}/{{ item.filename }}.ca"
+    content: |
+        {{ item.chain }}
+  with_items: "{{ apache_tls_certificates }} "
+
+- name: Copy apache vhost ssl configuration in place.
+  template:
+    src: "{{ apache_ssl_vhosts_template }}"
+    dest: "{{ apache_confd_path }}/{{ item.name }}.conf"
+    mode: 0644
+  with_items: "{{ apache_vhosts_ssl }}"
+  when: apache_vhosts_ssl |length > 0
+  notify: restart apache
+
+- name: Copy apache vhost configuration in place.
+  template:
+    src: "{{ apache_vhosts_template }}"
+    dest: "{{ apache_confd_path }}/{{ item.name }}.conf"
+    mode: 0644
+  with_items: "{{ apache_vhosts }}"
+  when: apache_vhosts |length > 0
+  notify: restart apache
+
+- name: Copy apache status configuration in place.
+  template:
+    src: "{{ apache_status_template }}"
+    dest: "{{ apache_confd_path }}/{{ apache_status_filename }}"
+    mode: 0644
+  when: apache_status_enable|bool
+  notify: restart apache
+
+- name: Copy apache httpd configuration in place.
+  template:
+    src: httpd.conf.j2
+    dest: "{{ apache_conf_path }}/{{ apache_conf_file }}"
+    mode: 0644
+  notify: restart apache
+
+- name: Copy apache ports configuration in place.
+  template:
+    src: "ports.conf.j2"
+    dest: "{{ apache_conf_path }}/ports.conf"
+    mode: 0644
+  notify: restart apache
+
+- name: Enable common httpd modules
+  apache2_module:
+    name: "{{ item }}"
+  with_items: "{{ apache_additional_modules }}"
+  when: apache_additional_modules |length > 0
+
+# - name: list firewalld zones
+#   command: firewall-cmd --get-zones
+#   register: test
+
+# - debug:
+#     msg: test
+#   when: "firewalld_default_zone in test.stdout"
+
+#### Should be managed by firewalld role
+# - name: "Open Firewalld Port {{ apache_listen_port }}"
+#   firewalld:
+#     port: "{{ apache_listen_port }}/tcp"
+# #    zone: "{{ firewalld_default_zone }}"
+#     permanent: yes
+#     state: enabled
+#   when: apache_vhosts |length > 0
+#
+# - name: "Open Firewalld Port {{ apache_listen_port_ssl }}"
+#   firewalld:
+#     port: "{{ apache_listen_port_ssl }}/tcp"
+#     #zone: "{{ firewalld_default_zone }}"
+#     permanent: yes
+#     state: enabled
+#   when: apache_vhosts_ssl |length > 0
+
+
+- name: remove default vhosts
+  file:
+    path: "{{ apache_confd_path }}/{{ item }}"
+    state: absent
+  with_items: "{{ apache_removeable_vhosts }}"
+  when: apache_remove_default_vhost
+
+- name: Ensure Apache has selected state and enabled on boot.
+  service:
+    name: "{{ apache_service }}"
+    state: "{{ apache_state }}"
+    enabled: true
